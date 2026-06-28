@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI-TRY LAB 入部アンケート</title>
+<title>AI-TRY-LAB 入部アンケート</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -192,7 +192,7 @@ html, body { min-height:100%; background:var(--ink); color:var(--parchment); fon
 
 <div id="opening">
   <div class="opening-crest">⚔️</div>
-  <div class="opening-title">AI-TRY LAB</div>
+  <div class="opening-title">AI-TRY-LAB</div>
   <div class="opening-sub"><span class="typewriter" id="tw"></span></div>
   <button class="start-btn" onclick="beginAdventure()">── 扉を開く ──</button>
 </div>
@@ -203,7 +203,7 @@ html, body { min-height:100%; background:var(--ink); color:var(--parchment); fon
 <div class="stage">
   <div class="scroll-card">
     <div class="card-header">
-      <div class="guild-badge">⚜ AI ADVENTURERS GUILD ⚜</div>
+      <div class="guild-badge">⚜ AI-TRY-LAB ── ADVENTURERS GUILD ⚜</div>
       <div class="card-title">入部アンケート</div>
       <div class="card-desc">AIを自由に試せる社内部活動。<br>ぜひ参加を検討してください！</div>
       <div class="benefit-rune">✨ 入部特典 ── Claudeアカウントを発行します</div>
@@ -499,13 +499,20 @@ html, body { min-height:100%; background:var(--ink); color:var(--parchment); fon
     Object.keys(answers).forEach(k=>delete answers[k]);
     chat.innerHTML='<div id="scroll-bottom"></div>';
     bottom=document.getElementById('scroll-bottom');
-    // 完了オーバーレイをリセット
+    // 完了オーバーレイをリセット（CSSアニメを再生するためクラスを付け直す）
     const overlay=document.getElementById('complete-overlay');
-    if(overlay) overlay.classList.remove('show');
+    if(overlay){
+      overlay.classList.remove('show');
+      // アニメリセット：animation-nameを一瞬noneにすることで再トリガー
+      const burst=overlay.querySelector('.complete-burst');
+      const msg=overlay.querySelector('.complete-msg');
+      if(burst){ burst.style.animation='none'; requestAnimationFrame(()=>{ burst.style.animation=''; }); }
+      if(msg){ msg.style.animation='none'; requestAnimationFrame(()=>{ msg.style.animation=''; }); }
+    }
     renderTree('name');
     await pushStep('name', async ()=>{
       await delay(400);
-      await botSay('こんにちは！⚔️<br><span class="accent">AI-TRY LAB</span>への入部アンケートを始めます。',800);
+      await botSay('こんにちは！⚔️<br><span class="accent">AI-TRY-LAB</span>への入部アンケートを始めます。',800);
       await delay(300);
       await botSay('まず、お名前を教えてください。');
       addScrollInput('名前を入力…',(name)=>{ setAnswer('name',name); goIntention(); });
@@ -514,7 +521,7 @@ html, body { min-height:100%; background:var(--ink); color:var(--parchment); fon
 
   async function goIntention(){
     await pushStep('intention', async ()=>{
-      await botSay(`<span class="name-highlight">${answers.name}</span>さん、よろしくお願いします！<br><br>AI-TRY LABへの入部意向を教えてください。`);
+      await botSay(`<span class="name-highlight">${answers.name}</span>さん、よろしくお願いします！<br><br>AI-TRY-LABへの入部意向を教えてください。`);
       addCmdWindow(['入部したい','条件次第で入部したい','検討中','今は見送り'],(choice)=>{
         setAnswer('intention',choice);
         if(choice==='今は見送り') goReason('見送り');
@@ -703,7 +710,7 @@ html, body { min-height:100%; background:var(--ink); color:var(--parchment); fon
       // 全画面演出
       const overlay=document.getElementById('complete-overlay');
       const subText=document.getElementById('complete-sub-text');
-      subText.innerHTML=`冒険者 <span class="highlight">${answers.name||''}</span> よ、<br>AI-TRY LABへの参加申請を受け付けた。<br><br>近日中に連絡が届くであろう。<br>共にAIの可能性を切り拓こう。<br><br><span style="font-size:11px;color:var(--gold-dim);letter-spacing:0.2em;">── AI-TRY LAB ──</span>`;
+      subText.innerHTML=`冒険者 <span class="highlight">${answers.name||''}</span> よ、<br>AI-TRY-LABへの参加申請を受け付けた。<br><br>近日中に連絡が届くであろう。<br>共にAIの可能性を切り拓こう。<br><br><span style="font-size:11px;color:var(--gold-dim);letter-spacing:0.2em;">── AI-TRY-LAB ──</span>`;
       overlay.classList.add('show');
       // パーティクル連発
       if(!TEST_MODE){

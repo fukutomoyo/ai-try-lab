@@ -199,7 +199,7 @@ html, body { min-height:100%; background:var(--ink); color:var(--parchment); fon
   };
 
   const FORM_URL='https://docs.google.com/forms/d/e/1FAIpQLSdQdAL2bKuzEBiOMJbE82Ktz8Xh_IXrwu3Wjimu1Vrutd_qPQ/formResponse';
-  const E={name:'entry.1563501262',intention:'entry.711442765',membership:'entry.1484656040',style:'entry.1228801947',solo_team:'entry.1545187734',activities:'entry.1224507291',memo:'entry.1604430407',reason:'entry.500671168'};
+  const E={name:'entry.1563501262',intention:'entry.711442765',membership:'entry.1484656040',style:'entry.1228801947',solo_team:'entry.1545187734',activities:'entry.1224507291',activities_other:'entry.1224507291.other_option_response',memo:'entry.1604430407',reason:'entry.500671168'};
 
   const chat=document.getElementById('chat');
   const tree=document.getElementById('progress-tree');
@@ -336,21 +336,54 @@ html, body { min-height:100%; background:var(--ink); color:var(--parchment); fon
     appendToBlock(win); addBackBtn(); scrollDown();
   }
 
+  // その他入力欄CSS
+  (function(){
+    const s=document.createElement('style');
+    s.textContent='.other-input-area{padding:4px 8px 6px;display:none;}.other-input-area.show{display:block;}.other-text-input{width:100%;background:linear-gradient(135deg,#0d0d20,#0a0a1a);border:1px solid var(--gold-dim);color:var(--parchment);padding:8px 12px;font-size:15px;font-family:"Noto Serif JP",serif;outline:none;box-sizing:border-box;}.other-text-input:focus{border-color:var(--gold);}';
+    document.head.appendChild(s);
+  })();
+
   function addMultiWindow(opts,onConfirm){
     const sel=[];
+    let otherText='';
     const win=document.createElement('div'); win.className='multi-window';
+
     opts.forEach(opt=>{
+      const isOther=(opt==='その他');
       const btn=document.createElement('button'); btn.className='multi-btn';
-      btn.innerHTML=`<div class="rune-check" style="color:transparent">✓</div><span>${opt}</span>`;
+      btn.innerHTML=`<div class="rune-check" style="color:transparent">✓</div><span>${isOther?'その他（自由入力）':opt}</span>`;
+
+      let otherArea=null;
+      if(isOther){
+        otherArea=document.createElement('div'); otherArea.className='other-input-area';
+        const inp=document.createElement('input'); inp.className='other-text-input'; inp.placeholder='具体的に教えてください…'; inp.type='text';
+        inp.addEventListener('input',()=>{ otherText=inp.value.trim(); });
+        otherArea.appendChild(inp);
+      }
+
       btn.onclick=()=>{
         const idx=sel.indexOf(opt);
-        if(idx>=0){sel.splice(idx,1);btn.classList.remove('selected');btn.querySelector('.rune-check').style.color='transparent';}
-        else{sel.push(opt);btn.classList.add('selected');btn.querySelector('.rune-check').style.color='white';}
+        if(idx>=0){
+          sel.splice(idx,1); btn.classList.remove('selected'); btn.querySelector('.rune-check').style.color='transparent';
+          if(otherArea){ otherArea.classList.remove('show'); otherText=''; }
+        }else{
+          sel.push(opt); btn.classList.add('selected'); btn.querySelector('.rune-check').style.color='white';
+          if(otherArea){ otherArea.classList.add('show'); setTimeout(()=>otherArea.querySelector('input').focus(),50); }
+        }
       };
       win.appendChild(btn);
+      if(otherArea) win.appendChild(otherArea);
     });
+
     const cb=document.createElement('button'); cb.className='confirm-rune-btn'; cb.textContent='── 選択を確定する ──';
-    cb.onclick=(ev)=>{ if(!sel.length){alert('ひとつ以上選択してください');return;} spawnParticles(ev.clientX,ev.clientY); fxBurst('✦ 確定 ✦'); clearLiveUI(); addMsg(sel.join('、'),'user'); onConfirm([...sel]); };
+    cb.onclick=(ev)=>{
+      if(!sel.length){alert('ひとつ以上選択してください');return;}
+      if(sel.includes('その他')&&!otherText){alert('「その他」の内容を入力してください');return;}
+      spawnParticles(ev.clientX,ev.clientY); fxBurst('✦ 確定 ✦'); clearLiveUI();
+      const displaySel=sel.map(s=>s==='その他'?`その他：${otherText}`:s);
+      addMsg(displaySel.join('、'),'user');
+      onConfirm([...sel],otherText);
+    };
     win.appendChild(cb);
     appendToBlock(win); addBackBtn(); scrollDown();
   }
@@ -478,7 +511,7 @@ html, body { min-height:100%; background:var(--ink); color:var(--parchment); fon
       addNotice('⚠ 会社のアカウントを使用するため、活動状況のレポート提出をお願いする可能性があります。レポート作成時間は稼働扱い（目安1時間程度）。AIを使ったレポート作成もOKですが、自分の感想・所感と活動内容の記載が必要です。');
       await delay(300);
       await botSay('興味のある活動内容を選んでください。複数選択できます。');
-      addMultiWindow(['Claudeをとにかく使ってみたい','アプリを作ってみたい','ゲームを作ってみたい','Webサイトを作ってみたい','社内ツールを作ってみたい','業務効率化に使いたい','その他'],(sel)=>{ setAnswer('activities',sel); goMemo(); });
+      addMultiWindow(['Claudeをとにかく使ってみたい','アプリを作ってみたい','ゲームを作ってみたい','Webサイトを作ってみたい','社内ツールを作ってみたい','業務効率化に使いたい','その他'],(sel,otherText)=>{ setAnswer('activities',sel); if(otherText) setAnswer('activities_other',otherText); goMemo(); });
     });
   }
 
@@ -486,8 +519,9 @@ html, body { min-height:100%; background:var(--ink); color:var(--parchment); fon
   async function goActivities(route){
     await pushStep('detail', async ()=>{
       await botSay('興味のある活動内容を選んでください。複数選択できます。');
-      addMultiWindow(['Claudeをとにかく使ってみたい','アプリを作ってみたい','ゲームを作ってみたい','Webサイトを作ってみたい','社内ツールを作ってみたい','業務効率化に使いたい','その他'],(sel)=>{
+      addMultiWindow(['Claudeをとにかく使ってみたい','アプリを作ってみたい','ゲームを作ってみたい','Webサイトを作ってみたい','社内ツールを作ってみたい','業務効率化に使いたい','その他'],(sel,otherText)=>{
         setAnswer('activities',sel);
+        if(otherText) setAnswer('activities_other',otherText);
         if(route==='検討中') goReason('検討中');
         else goMemo();
       });
@@ -547,7 +581,12 @@ html, body { min-height:100%; background:var(--ink); color:var(--parchment); fon
     if(answers.style) d.push([E.style,answers.style]);
     if(answers.solo_team) d.push([E.solo_team,answers.solo_team]);
     if(answers.activities){
-      (Array.isArray(answers.activities)?answers.activities:[answers.activities]).forEach(a=>d.push([E.activities,a]));
+      (Array.isArray(answers.activities)?answers.activities:[answers.activities]).forEach(a=>{
+        // その他は__other_option__として送信
+        d.push([E.activities, a==='その他'?'__other_option__':a]);
+      });
+      // その他の自由入力テキスト
+      if(answers.activities_other) d.push([E.activities_other, answers.activities_other]);
     }
     if(answers.memo) d.push([E.memo,answers.memo]);
     if(answers.reason) d.push([E.reason,answers.reason]);
@@ -604,11 +643,30 @@ html, body { min-height:100%; background:var(--ink); color:var(--parchment); fon
 
   function showComplete(ok){
     clearLiveUI();
-    fxFinale(['AI-TRY','LAB','✦ ようこそ ✦']);
-    const el=document.createElement('div'); el.className='quest-complete';
-    el.innerHTML=`<span class="complete-seal">📜</span><div class="complete-title">送信完了！</div><div class="complete-text">回答を受け付けました。<br><br>AI-TRY LABより改めてご連絡します。<br>一緒にAIの可能性を広げていきましょう！<br><br>── ありがとうございました ──</div>`;
-    appendToBlock(el); scrollDown();
-    renderTree(null);
+    if(ok){
+      fxFinale(['AI-TRY','LAB','✦ ようこそ ✦']);
+      const el=document.createElement('div'); el.className='quest-complete';
+      el.innerHTML=`<span class="complete-seal">📜</span><div class="complete-title">送信完了！</div><div class="complete-text">回答を受け付けました。<br><br>AI-TRY LABより改めてご連絡します。<br>一緒にAIの可能性を広げていきましょう！<br><br>── ありがとうございました ──</div>`;
+      appendToBlock(el); scrollDown();
+      renderTree(null);
+    }else{
+      // 送信失敗：isSubmittingをリセットして再試行ボタンを表示
+      isSubmitting=false;
+      const el=document.createElement('div'); el.className='quest-complete';
+      el.innerHTML=`<span class="complete-seal">⚠️</span><div class="complete-title" style="color:#f4a0a0;">送信に失敗しました</div><div class="complete-text">通信エラーが発生した可能性があります。<br>回答内容は保持されています。</div>`;
+      appendToBlock(el);
+      // 再試行ボタン
+      addCmdWindow(['── もう一度送信する ──','最初からやり直す'],async(choice)=>{
+        if(choice.includes('もう一度')){
+          await botSay('再送信します…⌛',400);
+          const ok2=await submitForm();
+          showComplete(ok2);
+        }else{
+          startChat();
+        }
+      });
+      scrollDown();
+    }
   }
 
   // ===== テスト用公開API =====

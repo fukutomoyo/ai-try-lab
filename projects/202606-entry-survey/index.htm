@@ -292,7 +292,8 @@ html, body { min-height:100%; background:var(--ink); color:var(--parchment); fon
       document.body.appendChild(p);
       const ang=(Math.random()*360)*Math.PI/180,dist=40+Math.random()*80;
       const tx=Math.cos(ang)*dist,ty=Math.sin(ang)*dist;
-      p.animate([{transform:'translate(-50%,-50%) scale(1)',opacity:1},{transform:`translate(calc(-50% + ${tx}px),calc(-50% + ${ty}px)) scale(0)`,opacity:0}],{duration:500+Math.random()*400,easing:'cubic-bezier(0,0,0.2,1)',fill:'forwards'}).onfinish=()=>p.remove();
+      const anim=p.animate([{transform:'translate(-50%,-50%) scale(1)',opacity:1},{transform:`translate(calc(-50% + ${tx}px),calc(-50% + ${ty}px)) scale(0)`,opacity:0}],{duration:500+Math.random()*400,easing:'cubic-bezier(0,0,0.2,1)',fill:'forwards'});
+      anim.addEventListener('finish',()=>p.remove());
     }
   }
 

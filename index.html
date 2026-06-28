@@ -10,9 +10,9 @@
 :root { --ink:#0a0a14; --gold:#c9a84c; --gold-dim:#8a6f2e; --magic:#6e44ff; --parchment:#e8e4d8; --parchment-dark:#c9c3ae; --blood:#8b1a1a; }
 html, body { min-height:100%; background:var(--ink); color:var(--parchment); font-family:'Noto Serif JP',serif; overflow-x:hidden; }
 #stars-canvas { position:fixed; inset:0; pointer-events:none; z-index:0; }
-.stage { position:relative; z-index:1; min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:40px 16px 60px; }
+.stage { position:relative; z-index:1; min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:70px 16px 60px; }
 
-#opening { position:fixed; inset:0; z-index:100; background:var(--ink); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:28px; transition:opacity 1s ease; }
+#opening { position:fixed; inset:0; z-index:300; background:var(--ink); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:28px; transition:opacity 1s ease; }
 #opening.fade-out { opacity:0; pointer-events:none; }
 .opening-crest { font-size:60px; animation:floatCrest 3s ease-in-out infinite; filter:drop-shadow(0 0 20px var(--gold)); }
 @keyframes floatCrest { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }
@@ -36,7 +36,15 @@ html, body { min-height:100%; background:var(--ink); color:var(--parchment); fon
 .card-desc { font-size:12px; color:var(--parchment-dark); line-height:1.8; letter-spacing:0.05em; }
 .benefit-rune { display:inline-flex; align-items:center; gap:6px; margin-top:12px; background:rgba(110,68,255,0.15); border:1px solid rgba(110,68,255,0.4); color:#a78bfa; font-size:11px; letter-spacing:0.08em; padding:6px 16px; box-shadow:0 0 12px rgba(110,68,255,0.2); }
 
-.progress-tree { padding:14px 18px; border-bottom:1px solid rgba(201,168,76,0.15); display:flex; flex-wrap:wrap; gap:6px 2px; align-items:center; background:rgba(14,13,30,0.96); position:sticky; position:-webkit-sticky; top:0; z-index:50; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); box-shadow:0 4px 20px rgba(0,0,0,0.4); }
+/* 進捗ツリー：画面上部にfixed固定 */
+.progress-tree {
+  position:fixed; top:0; left:0; right:0; z-index:200;
+  padding:10px 16px; display:flex; flex-wrap:wrap; gap:5px 2px; align-items:center; justify-content:center;
+  background:rgba(10,9,22,0.97); border-bottom:1px solid rgba(201,168,76,0.2);
+  -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px);
+  box-shadow:0 2px 20px rgba(0,0,0,0.6);
+}
+.progress-tree:empty { display:none; }
 .tree-node { display:inline-flex; align-items:center; gap:5px; font-size:10px; letter-spacing:0.03em; color:var(--gold-dim); padding:3px 9px; border:1px solid rgba(138,111,46,0.3); border-radius:12px; transition:all 0.3s; white-space:nowrap; }
 .tree-node .node-dot { width:6px; height:6px; border-radius:50%; background:var(--gold-dim); transition:all 0.3s; }
 .tree-node.done { color:var(--gold); border-color:rgba(201,168,76,0.5); }
@@ -144,6 +152,9 @@ html, body { min-height:100%; background:var(--ink); color:var(--parchment); fon
   <button class="start-btn" onclick="beginAdventure()">── 扉を開く ──</button>
 </div>
 
+<!-- 進捗ツリー：fixed固定でscroll-cardの外に配置 -->
+<div class="progress-tree" id="progress-tree"></div>
+
 <div class="stage">
   <div class="scroll-card">
     <div class="card-header">
@@ -152,7 +163,6 @@ html, body { min-height:100%; background:var(--ink); color:var(--parchment); fon
       <div class="card-desc">AIを自由に試せる社内部活動。<br>ぜひ参加を検討してください！</div>
       <div class="benefit-rune">✨ 入部特典 ── Claudeアカウントを発行します</div>
     </div>
-    <div class="progress-tree" id="progress-tree"></div>
     <div class="chat-scroll" id="chat">
       <div id="scroll-bottom"></div>
     </div>
@@ -189,7 +199,7 @@ html, body { min-height:100%; background:var(--ink); color:var(--parchment); fon
   };
 
   const FORM_URL='https://docs.google.com/forms/d/e/1FAIpQLSdQdAL2bKuzEBiOMJbE82Ktz8Xh_IXrwu3Wjimu1Vrutd_qPQ/formResponse';
-  const E={name:'entry.1563501262',intention:'entry.711442765',membership:'entry.1484656040',style:'entry.1228801947',solo_team:'entry.1545187734',activities:'entry.1224507291',memo:'entry.1604430407'};
+  const E={name:'entry.1563501262',intention:'entry.711442765',membership:'entry.1484656040',style:'entry.1228801947',solo_team:'entry.1545187734',activities:'entry.1224507291',memo:'entry.1604430407',reason:'entry.500671168'};
 
   const chat=document.getElementById('chat');
   const tree=document.getElementById('progress-tree');
@@ -204,6 +214,7 @@ html, body { min-height:100%; background:var(--ink); color:var(--parchment); fon
     {key:'style',label:'活動スタイル'},
     {key:'detail',label:'詳細'},
     {key:'memo',label:'ひとこと'},
+    {key:'reason',label:'理由'},
     {key:'confirm',label:'確認'},
   ];
 
@@ -425,7 +436,8 @@ html, body { min-height:100%; background:var(--ink); color:var(--parchment); fon
       await botSay(`<span class="accent">${answers.name}</span>さん、よろしくお願いします！<br><br>AI-TRY LABへの入部意向を教えてください。`);
       addCmdWindow(['入部したい','条件次第で入部したい','検討中','今は見送り'],(choice)=>{
         setAnswer('intention',choice);
-        if(choice==='今は見送り') goMemo();
+        if(choice==='今は見送り') goReason('見送り');
+        else if(choice==='検討中') goActivities('検討中');
         else goMembership();
       });
     });
@@ -441,7 +453,6 @@ html, body { min-height:100%; background:var(--ink); color:var(--parchment); fon
   async function goStyle(){
     await pushStep('style', async ()=>{
       await botSay('活動スタイルを教えてください。');
-      // 違いの補足説明を常時表示（検討中の選択肢は廃止）
       addLoreCard([
         {label:'稼働時間内で活動したい',desc:'業務として取り組みます。個人またはチームで活動し、成果物の提出や定例会での発表をお願いする場合があります。'},
         {label:'稼働時間外で活動したい',desc:'自分のペースでAIを自由に試せます。会社アカウント使用のため、活動レポート提出をお願いする可能性があります。レポート作成時間は稼働扱い（目安1時間程度）。'}
@@ -457,7 +468,7 @@ html, body { min-height:100%; background:var(--ink); color:var(--parchment); fon
   async function goSoloTeam(){
     await pushStep('detail', async ()=>{
       await botSay('個人・チーム、どちらで活動したいですか？');
-      addCmdWindow(['個人で活動したい','チームで活動したい'],(choice)=>{ setAnswer('solo_team',choice); goMemo(); });
+      addCmdWindow(['個人で活動したい','チームで活動したい'],(choice)=>{ setAnswer('solo_team',choice); goActivities('通常'); });
     });
   }
 
@@ -471,10 +482,34 @@ html, body { min-height:100%; background:var(--ink); color:var(--parchment); fon
     });
   }
 
+  // 興味のある活動（検討中ルートでも使用）
+  async function goActivities(route){
+    await pushStep('detail', async ()=>{
+      await botSay('興味のある活動内容を選んでください。複数選択できます。');
+      addMultiWindow(['Claudeをとにかく使ってみたい','アプリを作ってみたい','ゲームを作ってみたい','Webサイトを作ってみたい','社内ツールを作ってみたい','業務効率化に使いたい','その他'],(sel)=>{
+        setAnswer('activities',sel);
+        if(route==='検討中') goReason('検討中');
+        else goMemo();
+      });
+    });
+  }
+
+  // 通常ルート：質問メモ
   async function goMemo(){
     await pushStep('memo', async ()=>{
       await botSay('最後に、質問・確認したいこと・こういう条件なら入りたい、など自由に書いてください。<br><span style="font-size:12px;color:#9a8a6a;">（なければ「なし」と入力）</span>');
       addScrollInput('質問、条件、確認事項など…',(memo)=>{ setAnswer('memo',memo); goConfirm(); },true);
+    });
+  }
+
+  // 検討中・見送りルート：理由
+  async function goReason(route){
+    await pushStep('reason', async ()=>{
+      const label = route==='見送り'
+        ? '見送りの理由や気になっていることがあれば教えてください。<br><span style="font-size:12px;color:#9a8a6a;">（なければ「なし」と入力）</span>'
+        : '検討中の理由や気になっていることを教えてください。<br><span style="font-size:12px;color:#9a8a6a;">（なければ「なし」と入力）</span>';
+      await botSay(label);
+      addScrollInput('理由や気になること…',(reason)=>{ setAnswer('reason',reason); goConfirm(); },true);
     });
   }
 
@@ -484,10 +519,11 @@ html, body { min-height:100%; background:var(--ink); color:var(--parchment); fon
         `・名前：${answers.name}`,
         `・入部意向：${answers.intention}`,
         answers.membership?`・入部/体験：${answers.membership}`:null,
-        `・活動スタイル：${answers.style||'未回答'}`,
-        answers.solo_team?`・個人/チーム：${answers.solo_team}`:null,
+        answers.style?`・活動スタイル(稼働)：${answers.style}`:null,
+        answers.solo_team?`・活動スタイル(個人/チーム)：${answers.solo_team}`:null,
         answers.activities?`・興味ある活動：${Array.isArray(answers.activities)?answers.activities.join('、'):answers.activities}`:null,
-        `・メモ：${answers.memo}`,
+        answers.memo?`・質問メモ：${answers.memo}`:null,
+        answers.reason?`・理由：${answers.reason}`:null,
       ].filter(Boolean).join('<br>');
       await botSay(`以下の内容で送信します。よろしいですか？<br><br>${lines}`);
       const hr=document.createElement('hr'); hr.className='divider'; appendToBlock(hr);
@@ -508,12 +544,13 @@ html, body { min-height:100%; background:var(--ink); color:var(--parchment); fon
     d.push([E.name,answers.name||'']);
     d.push([E.intention,answers.intention||'']);
     if(answers.membership) d.push([E.membership,answers.membership]);
-    d.push([E.style,answers.style||'']);
+    if(answers.style) d.push([E.style,answers.style]);
     if(answers.solo_team) d.push([E.solo_team,answers.solo_team]);
     if(answers.activities){
       (Array.isArray(answers.activities)?answers.activities:[answers.activities]).forEach(a=>d.push([E.activities,a]));
     }
-    d.push([E.memo,answers.memo||'']);
+    if(answers.memo) d.push([E.memo,answers.memo]);
+    if(answers.reason) d.push([E.reason,answers.reason]);
     return d;
   }
 
@@ -601,7 +638,8 @@ html, body { min-height:100%; background:var(--ink); color:var(--parchment); fon
     },
     _treeState(){
       return [...tree.querySelectorAll('.tree-node')].map(n=>({label:n.textContent.trim(),current:n.classList.contains('current'),done:n.classList.contains('done')}));
-    }
+    },
+    _flow:{ goIntention, goMembership, goStyle, goSoloTeam, goStyleOut, goActivities, goMemo, goReason, goConfirm },
   };
 
 })();
